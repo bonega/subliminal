@@ -19,11 +19,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-__all__ = ['FORMATS', 'LANGUAGES', 'PLUGINS', 'API_PLUGINS', 'Subliminal', 'Subtitle', 'scan']
-from exceptions import *
-from videos import *
-from tasks import *
-from subtitle import *
-from core import *
-from api import *
-from version import __version__
+
+class Task(object):
+    """Base class for tasks to use in subliminal"""
+    pass
+
+
+class ListTask(Task):
+    """List task to list subtitles"""
+    def __init__(self, filepath, languages, plugin, config):
+        self.filepath = filepath
+        self.plugin = plugin
+        self.languages = languages
+        self.config = config
+
+
+class DownloadTask(Task):
+    """Download task to download subtitles"""
+    def __init__(self, subtitles):
+        self.subtitles = subtitles
+
+
+class StopTask(Task):
+    """Stop task to stop workers"""
+    pass

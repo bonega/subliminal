@@ -19,4 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+<<<<<<< HEAD
 __version__ = '0.4'
+=======
+__version__ = '1.1'
+>>>>>>> Changes for 1.1

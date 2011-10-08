@@ -23,11 +23,12 @@
 import PluginBase
 import gzip
 import os
-import socket
 import xmlrpclib
 import guessit
 import unicodedata
-from subliminal.classes import Subtitle, DownloadFailedError
+from subliminal.subtitle import Subtitle
+from subliminal.exceptions import DownloadFailedError
+from subliminal.videos import *
 
 
 class OpenSubtitles(PluginBase.PluginBase):
@@ -59,8 +60,9 @@ class OpenSubtitles(PluginBase.PluginBase):
     def __init__(self, config_dict=None):
         super(OpenSubtitles, self).__init__(self._plugin_languages, config_dict)
 
-    def list(self, filepath, languages):
+    def list(self, video, languages):
         possible_languages = self.possible_languages(languages)
+<<<<<<< HEAD
         if not possible_languages:
             return []
         if os.path.isfile(filepath):
@@ -69,6 +71,11 @@ class OpenSubtitles(PluginBase.PluginBase):
             return self.query(moviehash=filehash, languages=possible_languages, bytesize=size, filepath=filepath)
         else:
             return self.query(languages=possible_languages, filepath=filepath)
+=======
+        if video.exists:
+            return self.query(moviehash=video.hashes['OpenSubtitles'], languages=possible_languages, bytesize=video.size, filepath=video.path)
+        return self.query(languages=possible_languages, filepath=video.path)
+>>>>>>> Changes for 1.1
 
     def download(self, subtitle):
         try:
@@ -78,11 +85,14 @@ class OpenSubtitles(PluginBase.PluginBase):
                 dump.write(gz.read())
                 gz.close()
                 self.adjustPermissions(subtitle.path)
-            os.remove(subtitle.path + '.gz')
         except Exception as e:
             if os.path.exists(subtitle.path):
                 os.remove(subtitle.path)
             raise DownloadFailedError(str(e))
+        finally:
+            if os.path.exists(subtitle.path + '.gz'):
+                os.remove(subtitle.path + '.gz')
+            
         return subtitle
 
     def query(self, filepath, imdbID=None, moviehash=None, bytesize=None, languages=None):
@@ -108,17 +118,15 @@ class OpenSubtitles(PluginBase.PluginBase):
             else:  # we don't know what we have
                 return[]
         # login
-        self.server = xmlrpclib.Server(self.server_url)
-        socket.setdefaulttimeout(self.timeout)
+        self.server = xmlrpclib.ServerProxy(self.server_url)
         try:
             log_result = self.server.LogIn('', '', 'eng', self.user_agent)
             if not log_result['status'] or log_result['status'] != '200 OK' or not log_result['token']:
                 raise Exception('OpenSubtitles login failed')
             token = log_result['token']
-        except Exception:
-            self.logger.error(u'Cannot login')
+        except Exception as e:
+            self.logger.error(u'Cannot login: %s' % e, exc_info=True)
             token = None
-            socket.setdefaulttimeout(None)
             return []
         # search
         sublinks = self.get_results(token, search, filepath)
@@ -127,7 +135,6 @@ class OpenSubtitles(PluginBase.PluginBase):
             self.server.LogOut(token)
         except:
             self.logger.error(u'Cannot logout')
-        socket.setdefaulttimeout(None)
         return sublinks
 
     def get_results(self, token, search, filepath):
